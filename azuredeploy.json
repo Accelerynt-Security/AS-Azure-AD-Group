@@ -41,7 +41,6 @@
             "properties": {
                 "displayName": "[parameters('PlaybookName')]",
                 "customParameterValues": {},
-                "parameterValueType": "Alternative",
                 "api": {
                     "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuread')]"
                 }
@@ -65,8 +64,18 @@
         {
             "type": "Microsoft.Logic/workflows",
             "apiVersion": "2017-07-01",
-            "name": "[parameters('workflows_AS_Azure_AD_Group_name')]",
-            "location": "centralus",
+            "name": "[parameters('PlaybookName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "LogicAppsCategory": "security"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', variables('azuread'))]",
+                "[resourceId('Microsoft.Web/connections', variables('azuresentinel'))]"
+            ],
             "properties": {
                 "state": "Enabled",
                 "definition": {
@@ -125,7 +134,7 @@
                                             }
                                         },
                                         "method": "post",
-                                        "path": "[concat('/v1.0/groups/@{encodeURIComponent(''', parameters('GroupId), ''')}/members/$ref')]"
+                                        "path": "[concat('/v1.0/groups/@{encodeURIComponent(''', parameters('GroupId'), ''')}/members/$ref')]"
                                     }
                                 }
                             },
@@ -145,12 +154,7 @@
                             "azuread": {
                                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('azuread'))]",
                                 "connectionName": "[variables('azuread')]",
-                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuread')]",
-                                "connectionProperties": {
-                                    "authentication": {
-                                        "type": "ManagedServiceIdentity"
-                                    }
-                                }
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuread')]"
                             },
                             "azuresentinel": {
                                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('azuresentinel'))]",
